@@ -17,12 +17,19 @@ export default function CheckoutReturnPage() {
 
       setSessionData(data);
       setLoading(false);
+
+      if (data.status === "complete") {
+        // Redirect after short delay
+        setTimeout(() => {
+          router.push("/dashboard");
+        }, 2000);
+      }
     };
 
     if (sessionId) {
       fetchSessionStatus();
     }
-  }, [sessionId]);
+  }, [sessionId, router]);
 
   if (loading) return <p>Checking payment status...</p>;
 

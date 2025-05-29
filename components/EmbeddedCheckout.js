@@ -19,10 +19,17 @@ export default function EmbeddedCheckoutWrapper() {
       data: { session },
     } = await supabase.auth.getSession();
 
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
     const res = await fetch("/api/create-checkout-session", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ access_token: session.access_token }),
+      body: JSON.stringify({
+        access_token: session.access_token,
+        email: user.email,
+      }),
     });
 
     const data = await res.json();

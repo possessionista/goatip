@@ -6,34 +6,39 @@ import { supabase } from "/lib/dbClient";
 
 export default function DashboardPage() {
   const [user, setUser] = useState(null);
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const getUser = async () => {
+    const getUserAndSubscription = async () => {
       const { data, error } = await supabase.auth.getUser();
-      if (!error) {
-        setUser(data.user);
+
+      if (error || !data?.user) {
+        setLoading(false);
+        return;
       }
+
+      setUser(data.user);
+
+      // Check subscription status
+      const res = await fetch("/api/check-subscription", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: data.user.email }),
+      }).catch((err) => {
+        console.error("Fetch failed:", err);
+      });
+
+      const result = await res.json();
+
+      setIsSubscribed(result.isSubscribed);
+      setLoading(false);
     };
 
-    getUser();
+    getUserAndSubscription();
   }, []);
 
-  const handleSubscribe = async () => {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
-    const res = await fetch("/api/create-checkout-session", {
-      method: "POST",
-      body: JSON.stringify({ access_token: session.access_token }),
-      headers: { "Content-Type": "application/json" },
-    });
-
-    // No need to parse JSON – it'll redirect
-    if (res.redirected) {
-      window.location.href = res.url;
-    }
-  };
+  if (loading) return <p>Loading dashboard...</p>;
 
   return (
     <ProtectedRoute>
@@ -57,16 +62,19 @@ export default function DashboardPage() {
           <p>Loading user...</p>
         )}
       </div>
-      <div className="flex justify-center">
-        <button
-          className="mt-4 bg-green-600 text-white px-4 py-2"
-          onClick={() => {
-            window.location.href = "/dashboard/subscribe";
-          }}
-        >
-          Subscribe to Premium
-        </button>
-      </div>
+
+      {!isSubscribed && (
+        <div className="flex justify-center">
+          <button
+            className="mt-4 bg-green-600 text-white px-4 py-2"
+            onClick={() => {
+              window.location.href = "/dashboard/subscribe";
+            }}
+          >
+            Subscribe to Premium
+          </button>
+        </div>
+      )}
     </ProtectedRoute>
   );
 }

@@ -9,7 +9,6 @@ export default function LoginPage() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    console.log("orogin>>>>", `${window.location.origin}/auth/callback`);
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {

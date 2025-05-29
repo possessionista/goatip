@@ -4,17 +4,24 @@ import Stripe from "stripe";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export async function POST(request) {
-  const { access_token } = await request.json();
+  const { email } = await request.json();
 
-  if (!access_token) {
-    return NextResponse.json(
-      { error: "No access token provided" },
-      { status: 400 }
-    );
+  if (!email) {
+    return NextResponse.json({ error: "Missing email" }, { status: 400 });
   }
 
   try {
+    const existingCustomers = await stripe.customers.list({ email, limit: 1 });
+
+    let customer;
+    if (existingCustomers.data.length > 0) {
+      customer = existingCustomers.data[0];
+    } else {
+      customer = await stripe.customers.create({ email });
+    }
+
     const session = await stripe.checkout.sessions.create({
+      customer: customer.id,
       payment_method_types: ["card"],
       mode: "payment",
       line_items: [

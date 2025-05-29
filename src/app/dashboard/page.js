@@ -18,6 +18,23 @@ export default function DashboardPage() {
     getUser();
   }, []);
 
+  const handleSubscribe = async () => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    const res = await fetch("/api/create-checkout-session", {
+      method: "POST",
+      body: JSON.stringify({ access_token: session.access_token }),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    // No need to parse JSON – it'll redirect
+    if (res.redirected) {
+      window.location.href = res.url;
+    }
+  };
+
   return (
     <ProtectedRoute>
       <div className="p-4">
@@ -39,6 +56,14 @@ export default function DashboardPage() {
         ) : (
           <p>Loading user...</p>
         )}
+      </div>
+      <div className="flex justify-center">
+        <button
+          className="mt-4 bg-green-600 text-white px-4 py-2"
+          onClick={handleSubscribe}
+        >
+          Subscribe to Premium
+        </button>
       </div>
     </ProtectedRoute>
   );

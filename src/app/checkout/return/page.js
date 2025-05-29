@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 
-export default function CheckoutReturnPage() {
+// This component holds the logic that needs searchParams
+function CheckoutReturnContent() {
   const [sessionData, setSessionData] = useState(null);
   const [loading, setLoading] = useState(true);
+
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("session_id");
   const router = useRouter();
@@ -43,5 +45,13 @@ export default function CheckoutReturnPage() {
       <p>Status: {sessionData.payment_status}</p>
       {sessionData.customer_email && <p>Email: {sessionData.customer_email}</p>}
     </div>
+  );
+}
+
+export default function CheckoutReturnPage() {
+  return (
+    <Suspense fallback={<p>Loading checkout return...</p>}>
+      <CheckoutReturnContent />
+    </Suspense>
   );
 }

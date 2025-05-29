@@ -8,8 +8,8 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 export async function POST(req) {
   try {
     const headersList = await headers();
-    // const origin = headersList.get("origin");
-    const origin = "https://trusting-chigger-smooth.ngrok-free.app"; // hardcoded for now
+    const origin = headersList.get("origin");
+    // const origin = "https://trusting-chigger-smooth.ngrok-free.app"; // hardcoded for now
     const body = await req.json();
 
     console.log("Origin:", origin);

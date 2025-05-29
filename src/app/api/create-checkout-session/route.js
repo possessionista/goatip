@@ -14,22 +14,20 @@ export async function POST(request) {
   }
 
   try {
-    // You can fetch user data from Supabase using the token here if needed
-
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       mode: "payment",
       line_items: [
         {
-          price: "price_1RU7G1KLz2CTgBMbJQ7enDno", // already created in Stripe Dashboard
+          price: "price_1RUAx1KLz2CTgBMbDRWEpruE",
           quantity: 1,
         },
       ],
-      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/success`,
-      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/cancel`,
+      ui_mode: "embedded",
+      return_url: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout/return?session_id={CHECKOUT_SESSION_ID}`,
     });
 
-    return NextResponse.redirect(session.url, 303);
+    return NextResponse.json({ clientSecret: session.client_secret });
   } catch (err) {
     console.error("Stripe session creation failed", err);
     return NextResponse.json({ error: err.message }, { status: 500 });

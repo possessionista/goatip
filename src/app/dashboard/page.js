@@ -60,7 +60,9 @@ export default function DashboardPage() {
       <div className="flex justify-center">
         <button
           className="mt-4 bg-green-600 text-white px-4 py-2"
-          onClick={handleSubscribe}
+          onClick={() => {
+            window.location.href = "/dashboard/subscribe";
+          }}
         >
           Subscribe to Premium
         </button>

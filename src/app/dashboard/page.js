@@ -84,7 +84,7 @@ export default function DashboardPage() {
 
         {dailyTips.map((el, index) => {
           return (
-            <div className="flex gap-3" key={el.index.toString()}>
+            <div className="flex gap-3" key={index.toString()}>
               <p>{el.team}</p>
               <p>{el.call}</p>
               <p>{el.average}</p>

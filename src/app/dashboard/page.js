@@ -8,6 +8,7 @@ export default function DashboardPage() {
   const [user, setUser] = useState(null);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [dailyTips, setDailyTips] = useState([]);
 
   useEffect(() => {
     const getUserAndSubscription = async () => {
@@ -38,6 +39,29 @@ export default function DashboardPage() {
     getUserAndSubscription();
   }, []);
 
+  useEffect(() => {
+    const fetchDailyTips = async () => {
+      const response = await fetch("/api/daily-tips", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ isSubscribed: isSubscribed }), // <-- pass actual value here
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setDailyTips(data);
+        console.log("Daily Tips:", data);
+      } else {
+        console.error("Failed to fetch daily tips");
+      }
+    };
+    fetchDailyTips();
+  }, [isSubscribed]);
+
+  console.log("issub>>", isSubscribed);
+
   if (loading) return <p>Loading dashboard...</p>;
 
   return (
@@ -56,11 +80,18 @@ export default function DashboardPage() {
           </button>
         </div>
 
-        {user ? (
-          <pre>{JSON.stringify(user, null, 2)}</pre>
-        ) : (
-          <p>Loading user...</p>
-        )}
+        {`${dailyTips.length} Tips Today`}
+
+        {dailyTips.map((el, index) => {
+          return (
+            <div className="flex gap-3">
+              <p>{el.team}</p>
+              <p>{el.call}</p>
+              <p>{el.average}</p>
+              <p>{el.stat}</p>
+            </div>
+          );
+        })}
       </div>
 
       {!isSubscribed && (

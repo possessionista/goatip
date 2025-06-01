@@ -1,22 +1,40 @@
 "use client";
 import { supabase } from "/lib/dbClient";
+import { useEffect, useState } from "react";
 
 export default function Premium() {
-  const handleSubscribe = async () => {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+  const [user, setUser] = useState(null);
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-    const res = await fetch("/api/create-checkout-session", {
-      method: "POST",
-      body: JSON.stringify({ access_token: session.access_token }),
-      headers: { "Content-Type": "application/json" },
-    });
+  useEffect(() => {
+    const getUserAndSubscription = async () => {
+      const { data, error } = await supabase.auth.getUser();
 
-    if (res.redirected) {
-      window.location.href = res.url;
-    }
-  };
+      if (error || !data?.user) {
+        setLoading(false);
+        return;
+      }
+
+      setUser(data.user);
+
+      // Check subscription status
+      const res = await fetch("/api/check-subscription", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: data.user.email }),
+      }).catch((err) => {
+        console.error("Fetch failed:", err);
+      });
+
+      const result = await res.json();
+
+      setIsSubscribed(result.isSubscribed);
+      setLoading(false);
+    };
+
+    getUserAndSubscription();
+  }, []);
 
   return (
     <main className="p-8">
@@ -27,12 +45,27 @@ export default function Premium() {
         <li>✅ Track your profits over time</li>
       </ul>
 
-      <button
-        onClick={handleSubscribe}
-        className="mt-6 bg-green-600 text-white px-4 py-2 rounded"
-      >
-        Subscribe Now
-      </button>
+      {!isSubscribed && (
+        <button
+          onClick={() => {
+            window.location.href = "/dashboard/subscribe";
+          }}
+          className="mt-6 bg-green-600 text-white px-4 py-2 rounded"
+        >
+          Subscribe Now
+        </button>
+      )}
+
+      {isSubscribed && (
+        <button
+          onClick={() => {
+            window.location.href = "/dashboard";
+          }}
+          className="mt-6 bg-green-600 text-white px-4 py-2 rounded"
+        >
+          See Tips
+        </button>
+      )}
     </main>
   );
 }

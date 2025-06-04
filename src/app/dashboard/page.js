@@ -14,7 +14,6 @@ import { Moon, Sun, ListFilter } from "lucide-react";
 import { useTheme } from "next-themes";
 import { ChartContainer } from "@/components/ui/chart";
 import { Bar, BarChart, ReferenceLine, XAxis } from "recharts";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   Dialog,
   DialogClose,
@@ -185,7 +184,6 @@ export default function DashboardPage() {
             </Button>
 
             <Button
-              /* className="mt-4 bg-red-500 text-white px-4 py-2" */
               onClick={async () => {
                 await supabase.auth.signOut();
                 window.location.href = "/login";
@@ -196,7 +194,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="flex my-4">
+        <div className="flex my-4 items-center w-full">
           <Dialog open={isDialogOpen}>
             <Button
               onClick={() => {
@@ -209,7 +207,7 @@ export default function DashboardPage() {
               <ListFilter />
             </Button>
 
-            <DialogContent className="sm:max-w-[425px] sr-only">
+            <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
                 <DialogTitle>Filter</DialogTitle>
               </DialogHeader>
@@ -248,21 +246,17 @@ export default function DashboardPage() {
             </DialogContent>
           </Dialog>
 
-          <ToggleGroup
-            type="single"
-            variant="outline"
-            onValueChange={(t) => setSelectedTournament(t)}
-          >
+          <div className="flex gap-3 w-full !overflow-scroll">
             {getUniqueValues("tournament").map((item, idx) => (
-              <ToggleGroupItem
+              <Button
                 key={`tournament-${idx + 1}`}
-                className="px-4"
-                value={item}
+                variant="outline"
+                /* className="w-full justify-start" */
               >
                 {item}
-              </ToggleGroupItem>
+              </Button>
             ))}
-          </ToggleGroup>
+          </div>
         </div>
 
         {`${filteredDailyTips.length} Tips Today`}

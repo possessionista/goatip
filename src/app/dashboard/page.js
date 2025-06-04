@@ -251,7 +251,9 @@ export default function DashboardPage() {
               <Button
                 key={`tournament-${idx + 1}`}
                 variant="outline"
-                /* className="w-full justify-start" */
+                onClick={() => {
+                  setSelectedTournament(item);
+                }}
               >
                 {item}
               </Button>

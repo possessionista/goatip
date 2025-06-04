@@ -20,13 +20,10 @@ export async function POST(request) {
   try {
     const { isSubscribed } = await request.json(); // Parse body
 
-    let query = supabase
-      .from("daily_tips")
-      .select("*")
-      .in("date", ["02-06-2025", "04-06-2025"]);
+    let query = supabase.from("daily_tips").select("*").eq("date", todayDate);
+    //.in("date", ["02-06-2025", "04-06-2025"]);
     //.eq("date", "02-06-2025")
     // .eq("date", "04-06-2025");
-    // .eq("date", todayDate);
 
     if (!isSubscribed) {
       query = query.eq("is_premium", false);

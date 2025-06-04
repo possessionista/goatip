@@ -10,18 +10,33 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Moon, Sun } from "lucide-react";
+import { Moon, Sun, ListFilter } from "lucide-react";
 import { useTheme } from "next-themes";
 import { ChartContainer } from "@/components/ui/chart";
 import { Bar, BarChart, ReferenceLine, XAxis } from "recharts";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 export default function DashboardPage() {
   const [user, setUser] = useState(null);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [dailyTips, setDailyTips] = useState([]);
+  const [filteredDailyTips, setFilteredDailyTips] = useState([]);
   const { theme, setTheme } = useTheme();
   const [selectedTip, setSelectedTip] = useState("");
+  const [selectedTournament, setSelectedTournament] = useState("");
+  const [filterChoosen, setFilterChoosen] = useState("home_teams_first");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useEffect(() => {
     const getUserAndSubscription = async () => {
@@ -65,6 +80,7 @@ export default function DashboardPage() {
       if (response.ok) {
         const data = await response.json();
         setDailyTips(data);
+        setFilteredDailyTips(data);
         console.log("Daily Tips:", data);
       } else {
         console.error("Failed to fetch daily tips");
@@ -73,12 +89,9 @@ export default function DashboardPage() {
     fetchDailyTips();
   }, [isSubscribed]);
 
-  useEffect(() => {
-    setTheme("dark");
-  }, [setTheme]);
-
   const handleDarkMode = () => {
-    setTheme(theme === "dark" ? "light" : "dark");
+    if (theme === "system") setTheme("dark");
+    else setTheme(theme === "dark" ? "light" : "dark");
   };
 
   const formatChartData = (inputString) => {
@@ -103,13 +116,67 @@ export default function DashboardPage() {
     return (Math.ceil(number * 2) / 2).toFixed(1);
   };
 
+  const getUniqueValues = (key) => {
+    const uniqueSet = new Set();
+
+    for (const item of dailyTips) {
+      if (item[key] !== undefined && item[key] !== null) {
+        uniqueSet.add(item[key]);
+      }
+    }
+
+    return Array.from(uniqueSet);
+  };
+
+  const filterByKeyValue = (key, value) => {
+    return dailyTips.filter((item) => item[key] === value);
+  };
+
+  const sortByKey = (data, key, order = "desc") => {
+    return [...data].sort((a, b) => {
+      const aVal = a[key];
+      const bVal = b[key];
+
+      if (aVal == null) return 1;
+      if (bVal == null) return -1;
+
+      if (order === "asc") {
+        return aVal - bVal;
+      } else {
+        return bVal - aVal;
+      }
+    });
+  };
+
+  const handleFilterChange = () => {
+    if (filterChoosen == "home_teams_first") {
+      setSelectedTournament("");
+    } else if (filterChoosen == "most_assertive") {
+      setFilteredDailyTips(
+        sortByKey(filteredDailyTips, "team_overall_assertivity_this_mando")
+      );
+    } else if (filterChoosen == "highest_suggested_odd") {
+      setFilteredDailyTips(
+        sortByKey(filteredDailyTips, "suggested_minimal_odd")
+      );
+    }
+
+    setIsDialogOpen(false);
+  };
+
+  useEffect(() => {
+    if (!selectedTournament) setFilteredDailyTips(dailyTips);
+    else
+      setFilteredDailyTips(filterByKeyValue("tournament", selectedTournament));
+  }, [selectedTournament]);
+
   if (loading) return <p>Loading dashboard...</p>;
 
   return (
     <ProtectedRoute>
       <div className="p-4">
         <div className="flex justify-between">
-          <h1 className="text-2xl mb-4">Dashboard</h1>
+          <h1 className="text-2xl mb-4">GOATIPS</h1>
 
           <div className="flex full justify-between content-center gap-4">
             <Button variant="outline" onClick={handleDarkMode}>
@@ -129,15 +196,84 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {`${dailyTips.length} Tips Today`}
+        <div className="flex my-4">
+          <Dialog open={isDialogOpen}>
+            <Button
+              onClick={() => {
+                setIsDialogOpen(true);
+              }}
+              size="icon"
+              variant="secondary"
+              className="mr-4"
+            >
+              <ListFilter />
+            </Button>
 
-        {dailyTips.map((el, index) => {
+            <DialogContent className="sm:max-w-[425px] sr-only">
+              <DialogHeader>
+                <DialogTitle>Filter</DialogTitle>
+              </DialogHeader>
+              <RadioGroup
+                defaultValue="home_teams_first"
+                onValueChange={(r) => setFilterChoosen(r)}
+              >
+                <div className="flex items-center gap-3">
+                  <RadioGroupItem value="home_teams_first" id="r1" />
+                  <Label htmlFor="r1">{`Home teams first`}</Label>
+                </div>
+                <div className="flex items-center gap-3">
+                  <RadioGroupItem value="most_assertive" id="r2" />
+                  <Label htmlFor="r2">{`Most->Least assertive teams`}</Label>
+                </div>
+                <div className="flex items-center gap-3">
+                  <RadioGroupItem value="highest_suggested_odd" id="r3" />
+                  <Label htmlFor="r3">{`Highest->Lowest suggested odd`}</Label>
+                </div>
+              </RadioGroup>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button
+                    onClick={() => {
+                      setIsDialogOpen(false);
+                    }}
+                    variant="outline"
+                  >
+                    Cancel
+                  </Button>
+                </DialogClose>
+                <Button onClick={handleFilterChange} type="submit">
+                  Save
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          <ToggleGroup
+            type="single"
+            variant="outline"
+            onValueChange={(t) => setSelectedTournament(t)}
+          >
+            {getUniqueValues("tournament").map((item, idx) => (
+              <ToggleGroupItem
+                key={`tournament-${idx + 1}`}
+                className="px-4"
+                value={item}
+              >
+                {item}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+        </div>
+
+        {`${filteredDailyTips.length} Tips Today`}
+
+        {filteredDailyTips.map((el, index) => {
           return (
             <Accordion
               type="single"
               collapsible
               className="w-full"
-              defaultValue="item-1"
+              // defaultValue="item-1"
               onValueChange={(tip) => {
                 setSelectedTip(tip);
               }}

@@ -23,7 +23,9 @@ export async function POST(request) {
     let query = supabase
       .from("daily_tips")
       .select("*")
-      .eq("date", "02-06-2025");
+      .in("date", ["02-06-2025", "04-06-2025"]);
+    //.eq("date", "02-06-2025")
+    // .eq("date", "04-06-2025");
     // .eq("date", todayDate);
 
     if (!isSubscribed) {

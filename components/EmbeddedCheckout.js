@@ -28,7 +28,7 @@ export default function EmbeddedCheckoutWrapper() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         access_token: session.access_token,
-        email: user.email,
+        email: user ? user.email : null,
       }),
     });
 

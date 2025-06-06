@@ -41,8 +41,11 @@ export default function DashboardPage() {
     const getUserAndSubscription = async () => {
       const { data, error } = await supabase.auth.getUser();
 
+      console.log("user>>>>", data);
+
       if (error || !data?.user) {
         setLoading(false);
+        // window.location.href = "/login?r=session_expired";
         return;
       }
 
@@ -59,7 +62,8 @@ export default function DashboardPage() {
 
       const result = await res.json();
 
-      setIsSubscribed(result.isSubscribed);
+      //setIsSubscribed(result.isSubscribed);
+      setIsSubscribed(false); //testing non subscription
       setLoading(false);
     };
 
@@ -73,7 +77,8 @@ export default function DashboardPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ isSubscribed: isSubscribed }), // <-- pass actual value here
+        //body: JSON.stringify({ isSubscribed: isSubscribed }),
+        body: JSON.stringify({ isSubscribed: isSubscribed }),
       });
 
       if (response.ok) {
@@ -111,8 +116,13 @@ export default function DashboardPage() {
     },
   };
 
-  const roundToNextOdd = (number) => {
-    return (Math.ceil(number * 2) / 2).toFixed(1);
+  const roundToOddsFormat = (number) => {
+    const rounded = Math.round(number * 2) / 2; // Round to nearest 0.5
+    if (rounded % 1 === 0) {
+      // If it's a whole number (e.g. 3.0), add 0.5 to match odds format
+      return (rounded + 0.5).toFixed(1);
+    }
+    return rounded.toFixed(1); // Already in .5 format
   };
 
   const getUniqueValues = (key) => {
@@ -164,10 +174,31 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    if (!selectedTournament) setFilteredDailyTips(dailyTips);
+    if (!selectedTournament.length) setFilteredDailyTips(dailyTips);
     else
       setFilteredDailyTips(filterByKeyValue("tournament", selectedTournament));
   }, [selectedTournament]);
+
+  const handleTournamentSelection = (selection) => {
+    if (selectedTournament.length && selectedTournament == selection)
+      setSelectedTournament("");
+    else setSelectedTournament(selection);
+  };
+
+  const callLogout = async () => {
+    await supabase.auth.signOut();
+    window.location.href = "/";
+  };
+
+  const callSubscribe = () => {
+    // TODO: Instead of straight to subscribe pass by a page "already subscribed/first time"
+    window.location.href = "/premium";
+  };
+
+  const handleTopRightButton = () => {
+    if (isSubscribed) callLogout();
+    else callSubscribe();
+  };
 
   if (loading) return <p>Loading dashboard...</p>;
 
@@ -183,13 +214,8 @@ export default function DashboardPage() {
               <Moon className="absolute h-[1.2rem] w-[1.2rem] scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0" />
             </Button>
 
-            <Button
-              onClick={async () => {
-                await supabase.auth.signOut();
-                window.location.href = "/login";
-              }}
-            >
-              Logout
+            <Button onClick={handleTopRightButton}>
+              {isSubscribed ? "Logout" : `+${22} Tips`}
             </Button>
           </div>
         </div>
@@ -252,8 +278,13 @@ export default function DashboardPage() {
                 key={`tournament-${idx + 1}`}
                 variant="outline"
                 onClick={() => {
-                  setSelectedTournament(item);
+                  handleTournamentSelection(item);
                 }}
+                className={
+                  selectedTournament == item
+                    ? "border-primary bg-primary text-white dark:bg-white dark:text-gray-950"
+                    : ""
+                }
               >
                 {item}
               </Button>
@@ -286,9 +317,9 @@ export default function DashboardPage() {
                 <AccordionTrigger>
                   <div className="flex w-full justify justify-between">
                     <span>
-                      {`${el.team} ${el.call} ${roundToNextOdd(el.average)} ${
-                        el.stat
-                      }`}
+                      {`${el.team} ${el.call} ${roundToOddsFormat(
+                        el.average
+                      )} ${el.stat}`}
                     </span>
                     <span>{`Min. Odd: ${el.suggested_minimal_odd}`}</span>
                   </div>
@@ -408,7 +439,7 @@ export default function DashboardPage() {
         })}
       </div>
 
-      {!isSubscribed && (
+      {/* {!isSubscribed && (
         <div className="flex justify-center">
           <button
             className="mt-4 bg-green-600 text-white px-4 py-2"
@@ -419,7 +450,7 @@ export default function DashboardPage() {
             Subscribe to Premium
           </button>
         </div>
-      )}
+      )} */}
     </ProtectedRoute>
   );
 }

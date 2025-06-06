@@ -12,9 +12,7 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        // emailRedirectTo: `${window.location.origin}/auth/callback`,
-        emailRedirectTo:
-          "https://trusting-chigger-smooth.ngrok-free.app/auth/callback",
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     });
     if (error) {
@@ -23,6 +21,8 @@ export default function LoginPage() {
       setMessage("Check your email for a login link!");
     }
   };
+
+  // handle url parameter 'session_expired'
 
   return (
     <div className="p-4 max-w-md mx-auto">

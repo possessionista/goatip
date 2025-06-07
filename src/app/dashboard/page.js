@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import AdBanner from "/components/AddBanner";
 
 export default function DashboardPage() {
   const [user, setUser] = useState(null);
@@ -231,6 +232,14 @@ export default function DashboardPage() {
               {isSubscribed ? "Logout" : `+${totalPremiumTips} Tips`}
             </Button>
           </div>
+        </div>
+
+        <div className="flex w-full">
+          <AdBanner
+            dataAdFormat="auto"
+            dataFullWidthResponsive={true}
+            dataAdSlot="6939992992"
+          />
         </div>
 
         <div className="flex my-4 items-center w-full">

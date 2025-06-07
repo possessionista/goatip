@@ -234,14 +234,6 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="flex w-full">
-          <AdBanner
-            dataAdFormat="auto"
-            dataFullWidthResponsive={true}
-            dataAdSlot="6939992992"
-          />
-        </div>
-
         <div className="flex my-4 items-center w-full">
           <Dialog open={isDialogOpen}>
             <Button
@@ -312,6 +304,14 @@ export default function DashboardPage() {
               </Button>
             ))}
           </div>
+        </div>
+
+        <div className="bg-white">
+          <AdBanner
+            dataAdFormat="auto"
+            dataFullWidthResponsive={true}
+            dataAdSlot="6939992992"
+          />
         </div>
 
         {`${filteredDailyTips.length} Tips Today`}

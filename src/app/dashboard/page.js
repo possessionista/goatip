@@ -36,12 +36,11 @@ export default function DashboardPage() {
   const [selectedTournament, setSelectedTournament] = useState("");
   const [filterChoosen, setFilterChoosen] = useState("home_teams_first");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [totalPremiumTips, setTotalPremiumTips] = useState(0);
 
   useEffect(() => {
     const getUserAndSubscription = async () => {
       const { data, error } = await supabase.auth.getUser();
-
-      console.log("user>>>>", data);
 
       if (error || !data?.user) {
         setLoading(false);
@@ -62,8 +61,7 @@ export default function DashboardPage() {
 
       const result = await res.json();
 
-      //setIsSubscribed(result.isSubscribed);
-      setIsSubscribed(false); //testing non subscription
+      setIsSubscribed(result.isSubscribed);
       setLoading(false);
     };
 
@@ -77,7 +75,6 @@ export default function DashboardPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        //body: JSON.stringify({ isSubscribed: isSubscribed }),
         body: JSON.stringify({ isSubscribed: isSubscribed }),
       });
 
@@ -90,7 +87,24 @@ export default function DashboardPage() {
         console.error("Failed to fetch daily tips");
       }
     };
+
+    const fetchTotalPremiumTips = async () => {
+      const response = await fetch("/api/count-premium-tips", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const { premiumCount } = await response.json();
+        setTotalPremiumTips(premiumCount);
+      } else {
+        console.log("Failed to fetch total premium tips");
+      }
+    };
     fetchDailyTips();
+    fetchTotalPremiumTips();
   }, [isSubscribed]);
 
   const handleDarkMode = () => {
@@ -191,7 +205,6 @@ export default function DashboardPage() {
   };
 
   const callSubscribe = () => {
-    // TODO: Instead of straight to subscribe pass by a page "already subscribed/first time"
     window.location.href = "/premium";
   };
 
@@ -215,7 +228,7 @@ export default function DashboardPage() {
             </Button>
 
             <Button onClick={handleTopRightButton}>
-              {isSubscribed ? "Logout" : `+${22} Tips`}
+              {isSubscribed ? "Logout" : `+${totalPremiumTips} Tips`}
             </Button>
           </div>
         </div>

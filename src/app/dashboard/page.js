@@ -306,7 +306,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="bg-white">
+        <div className="">
           <AdBanner
             dataAdFormat="auto"
             dataFullWidthResponsive={true}

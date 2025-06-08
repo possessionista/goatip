@@ -306,13 +306,13 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="">
+        {/* <div className="">
           <AdBanner
             dataAdFormat="auto"
             dataFullWidthResponsive={true}
             dataAdSlot="6939992992"
           />
-        </div>
+        </div> */}
 
         {`${filteredDailyTips.length} Tips Today`}
 

@@ -1,17 +1,23 @@
 "use client";
-
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 export default function AdBanner({
   dataAdSlot,
   dataAdFormat,
   dataFullWidthResponsive,
 }) {
+  const adRef = useRef(null);
+
   useEffect(() => {
+    if (!adRef.current) return;
+    if (adRef.current.getAttribute("data-adsbygoogle-status") === "done") {
+      return;
+    }
+
     try {
       (window.adsbygoogle = window.adsbygoogle || []).push({});
-    } catch (error) {
-      console.log(error.message);
+    } catch (e) {
+      console.error("Error loading ads:", e);
     }
   }, []);
 
@@ -23,6 +29,7 @@ export default function AdBanner({
       data-ad-slot={dataAdSlot}
       data-ad-format={dataAdFormat}
       data-full-width-responsive={dataFullWidthResponsive.toString()}
-    ></ins>
+      ref={adRef}
+    />
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import Script from "next/script";
 import { useEffect } from "react";
 
 export default function AdBanner({
@@ -17,11 +18,11 @@ export default function AdBanner({
 
   return (
     <>
-      <script
+      <Script
         async
         src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1924484474425066"
-        crossorigin="anonymous"
-      ></script>
+        crossOrigin="anonymous"
+      ></Script>
       <ins
         className="adsbygoogle"
         style={{ display: "block" }}

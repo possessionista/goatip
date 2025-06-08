@@ -34,11 +34,6 @@ export default function RootLayout({ children }) {
           type="image/<generated>"
           sizes="<generated>"
         />
-        <script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1924484474425066"
-          crossorigin="anonymous"
-        ></script>
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}

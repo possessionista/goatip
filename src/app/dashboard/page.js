@@ -83,6 +83,7 @@ export default function DashboardPage() {
         const data = await response.json();
         setDailyTips(data);
         setFilteredDailyTips(data);
+        console.log("grouped data", groupByMatchName(data));
         console.log("Daily Tips:", data);
       } else {
         console.error("Failed to fetch daily tips");
@@ -214,6 +215,19 @@ export default function DashboardPage() {
     else callSubscribe();
   };
 
+  function groupByMatchName(dataArray) {
+    return dataArray.reduce((acc, item) => {
+      const matchName = item.match_name;
+
+      if (!acc[matchName]) {
+        acc[matchName] = [];
+      }
+
+      acc[matchName].push(item);
+      return acc;
+    }, {});
+  }
+
   if (loading) return <p>Loading dashboard...</p>;
 
   return (
@@ -306,159 +320,156 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* <div className="">
-          <AdBanner
-            dataAdFormat="auto"
-            dataFullWidthResponsive={true}
-            dataAdSlot="6939992992"
-          />
-        </div> */}
-
         {`${filteredDailyTips.length} Tips Today`}
 
-        {filteredDailyTips.map((el, index) => {
-          return (
-            <Accordion
-              type="single"
-              collapsible
-              className="w-full"
-              // defaultValue="item-1"
-              onValueChange={(tip) => {
-                setSelectedTip(tip);
-              }}
-              key={`acc-${index}`}
-            >
-              <AccordionItem
-                value={`item-${index + 1}`}
-                className={`transition-all duration-200 ${
-                  selectedTip === `item-${index + 1}`
-                    ? "border border-1 border-gray-950 dark:border-gray-100 my-2 p-4"
-                    : "border border-transparent"
-                }`}
-              >
-                <AccordionTrigger>
-                  <div className="flex w-full justify justify-between">
-                    <span>
-                      {`${el.team} ${el.call} ${roundToOddsFormat(
-                        el.average
-                      )} ${el.stat}`}
-                    </span>
-                    <span>{`Min. Odd: ${el.suggested_minimal_odd}`}</span>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="flex flex-col gap-4 text-balance">
-                  <div className="flex flex-col lg:flex-row w-full items-stretch gap-4">
-                    <div className="w-full lg:w-[40%]">
-                      <div className="flex flex-col space-y-6">
-                        {/* Stat Block 1 */}
-                        <div className="flex flex-col">
-                          <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                            {`${el.team} overall assertivity when ${el.mando}`}
-                          </span>
-                          <span className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                            {`${(
-                              el.team_overall_assertivity_this_mando * 100
-                            ).toFixed(2)}% (${
-                              el.total_calls_overall_this_mando
-                            } calls)`}
-                          </span>
+        {Object.entries(groupByMatchName(filteredDailyTips)).map(
+          ([matchName, tips]) => (
+            <div key={matchName} className="mb-6">
+              <h2 className="text-xl font-bold mb-2">{matchName}</h2>
+
+              {tips.map((el, index) => (
+                <Accordion
+                  type="single"
+                  collapsible
+                  className="w-full"
+                  onValueChange={(tip) => {
+                    setSelectedTip(tip);
+                  }}
+                  key={`acc-${matchName}-${index}`}
+                >
+                  <AccordionItem
+                    value={`item-${index + 1}`}
+                    className={`transition-all duration-200 ${
+                      selectedTip === `item-${index + 1}`
+                        ? "border border-1 border-gray-950 dark:border-gray-100 my-2 p-4"
+                        : "border border-transparent"
+                    }`}
+                  >
+                    <AccordionTrigger>
+                      <div className="flex w-full justify justify-between">
+                        <span>
+                          {`${el.team} ${el.call} ${roundToOddsFormat(
+                            el.average
+                          )} ${el.stat}`}
+                        </span>
+                        <span>{`Min. Odd: ${el.suggested_minimal_odd}`}</span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="flex flex-col gap-4 text-balance">
+                      <div className="flex flex-col lg:flex-row w-full items-stretch gap-4">
+                        <div className="w-full lg:w-[40%]">
+                          <div className="flex flex-col space-y-6">
+                            {/* Stat Block 1 */}
+                            <div className="flex flex-col">
+                              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                                {`${el.team} overall assertivity when ${el.mando}`}
+                              </span>
+                              <span className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                                {`${(
+                                  el.team_overall_assertivity_this_mando * 100
+                                ).toFixed(2)}% (${
+                                  el.total_calls_overall_this_mando
+                                } calls)`}
+                              </span>
+                            </div>
+
+                            {/* Stat Block 2 */}
+                            <div className="flex flex-col">
+                              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                                {`${el.team} assertivity when calling ${el.call} at ${el.mando}`}
+                              </span>
+                              <span className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                                {`${(
+                                  el.team_calls_assertivity_this_mando * 100
+                                ).toFixed(2)}% (${
+                                  el.total_calls_this_mando
+                                } calls)`}
+                              </span>
+                            </div>
+
+                            {/* Stat Block 3 */}
+                            <div className="flex flex-col">
+                              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                                {`${el.team} assertivity when calling ${el.call} ${el.stat} at ${el.mando}`}
+                              </span>
+                              <span className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                                {`${(
+                                  el.team_calls_this_stat_assertivity_this_mando *
+                                  100
+                                ).toFixed(2)}% (${
+                                  el.total_calls_this_stat_this_mando
+                                } calls)`}
+                              </span>
+                            </div>
+
+                            {/* Same mando teams assertivity */}
+                            <div className="flex flex-col">
+                              <span className="flex text-sm font-medium text-gray-600 dark:text-gray-400">
+                                <span className="text-sm font-medium text-gray-600 dark:text-gray-400 capitalize mr-1">
+                                  {el.mando}
+                                </span>
+                                {`teams average assertivity`}
+                              </span>
+                              <span className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                                {`${(
+                                  el.teams_assertivity_overall_percentage_this_mando *
+                                  100
+                                ).toFixed(2)}%`}
+                              </span>
+                            </div>
+                          </div>
                         </div>
 
-                        {/* Stat Block 2 */}
-                        <div className="flex flex-col">
-                          <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                            {`${el.team} assertivity when calling ${el.call} at ${el.mando}`}
-                          </span>
-                          <span className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                            {`${(
-                              el.team_calls_assertivity_this_mando * 100
-                            ).toFixed(2)}% (${
-                              el.total_calls_this_mando
-                            } calls)`}
-                          </span>
-                        </div>
+                        <div className="h-[2px] bg-gray-300 lg:h-auto lg:w-[2px] lg:self-stretch"></div>
 
-                        {/* Stat Block 3 */}
-                        <div className="flex flex-col">
-                          <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                            {`${el.team} assertivity when calling ${el.call} ${el.stat} at ${el.mando}`}
-                          </span>
-                          <span className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                            {`${(
-                              el.team_calls_this_stat_assertivity_this_mando *
-                              100
-                            ).toFixed(2)}% (${
-                              el.total_calls_this_stat_this_mando
-                            } calls)`}
-                          </span>
-                        </div>
+                        <div className="w-full lg:w-[60%] flex flex-col justify-end">
+                          <ChartContainer
+                            config={chartConfig}
+                            className="min-h-[200px] w-full max-h-[90%]"
+                          >
+                            <BarChart
+                              accessibilityLayer
+                              data={formatChartData(el.last_5_occurrences)}
+                            >
+                              <ReferenceLine
+                                y={el.average}
+                                stroke="#F3D17C"
+                                label={{
+                                  position: "top",
+                                  value: el.average.toFixed(2),
+                                  fill: "#F3D17C",
+                                  fontSize: 12,
+                                }}
+                                strokeWidth={3}
+                              />
+                              <XAxis
+                                dataKey="week"
+                                tickLine={false}
+                                tickMargin={10}
+                                axisLine={false}
+                                tickFormatter={(value) => value.slice(0, 3)}
+                              />
 
-                        {/* Same mando teams assertivity */}
-                        <div className="flex flex-col">
-                          <span className="flex text-sm font-medium text-gray-600 dark:text-gray-400">
-                            <span className="text-sm font-medium text-gray-600 dark:text-gray-400 capitalize mr-1">
-                              {el.mando}
-                            </span>
-                            {`teams average assertivity`}
-                          </span>
-                          <span className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                            {`${(
-                              el.teams_assertivity_overall_percentage_this_mando *
-                              100
-                            ).toFixed(2)}%`}
-                          </span>
+                              <Bar
+                                dataKey="value"
+                                fill="var(--color-value)"
+                                radius={4}
+                                label={{
+                                  fill: theme == "dark" ? "white" : "black",
+                                  position: "top",
+                                }}
+                              />
+                            </BarChart>
+                          </ChartContainer>
                         </div>
                       </div>
-                    </div>
-
-                    <div className="h-[2px] bg-gray-300 lg:h-auto lg:w-[2px] lg:self-stretch"></div>
-
-                    <div className="w-full lg:w-[60%] flex flex-col justify-end">
-                      <ChartContainer
-                        config={chartConfig}
-                        className="min-h-[200px] w-full max-h-[90%]"
-                      >
-                        <BarChart
-                          accessibilityLayer
-                          data={formatChartData(el.last_5_occurrences)}
-                        >
-                          <ReferenceLine
-                            y={el.average}
-                            stroke="#F3D17C"
-                            label={{
-                              position: "top",
-                              value: el.average.toFixed(2),
-                              fill: "#F3D17C",
-                              fontSize: 12,
-                            }}
-                            strokeWidth={3}
-                          />
-                          <XAxis
-                            dataKey="week"
-                            tickLine={false}
-                            tickMargin={10}
-                            axisLine={false}
-                            tickFormatter={(value) => value.slice(0, 3)}
-                          />
-
-                          <Bar
-                            dataKey="value"
-                            fill="var(--color-value)"
-                            radius={4}
-                            label={{
-                              fill: theme == "dark" ? "white" : "black",
-                              position: "top",
-                            }}
-                          />
-                        </BarChart>
-                      </ChartContainer>
-                    </div>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-          );
-        })}
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              ))}
+            </div>
+          )
+        )}
       </div>
 
       {/* {!isSubscribed && (

@@ -1,28 +1,27 @@
 import { createClient } from "@supabase/supabase-js";
-import { getTodayDateFormatted } from "@/lib/utils";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-export async function GET(request) {
-  const { searchParams } = new URL(request.url);
-  const selectedDate = searchParams.get("selectedDate");
-
+export async function GET() {
   try {
-    const { count: premiumCount, error: premiumError } = await supabase
+    const { data, error } = await supabase
       .from("daily_tips")
-      .select("*", { count: "exact", head: true })
-      .eq("date", selectedDate)
-      .eq("is_premium", true);
+      .select("date")
+      .neq("match_name", null)
+      .neq("match_name", "")
+      .order("date", { ascending: true });
 
-    if (premiumError) {
-      console.error("Error counting premium records:", premiumError);
+    if (error) {
+      console.error("Error fetching dates:", error);
       return new Response("Error fetching data", { status: 500 });
     }
 
-    return new Response(JSON.stringify({ premiumCount }), {
+    const uniqueDates = Array.from(new Set(data.map((item) => item.date)));
+
+    return new Response(JSON.stringify({ dates: uniqueDates }), {
       status: 200,
       headers: {
         "Content-Type": "application/json",

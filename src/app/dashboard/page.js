@@ -10,7 +10,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Moon, Sun, ListFilter } from "lucide-react";
+import { Moon, Sun, ListFilter, CalendarDays } from "lucide-react";
 import { useTheme } from "next-themes";
 import { ChartContainer } from "@/components/ui/chart";
 import { Bar, BarChart, ReferenceLine, XAxis } from "recharts";
@@ -24,7 +24,12 @@ import {
 } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import AdBanner from "/components/AddBanner";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  getTodayDateFormatted,
+  parseDateFromString,
+  formatDateToString,
+} from "@/lib/utils";
 
 export default function DashboardPage() {
   const [user, setUser] = useState(null);
@@ -38,6 +43,10 @@ export default function DashboardPage() {
   const [filterChoosen, setFilterChoosen] = useState("home_teams_first");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [totalPremiumTips, setTotalPremiumTips] = useState(0);
+  const [selectedDate, setSelectedDate] = useState(
+    parseDateFromString(getTodayDateFormatted())
+  );
+  const [isCalendarDialogOpen, setIsCalendarDialogOpen] = useState(false);
 
   useEffect(() => {
     const getUserAndSubscription = async () => {
@@ -69,29 +78,52 @@ export default function DashboardPage() {
     getUserAndSubscription();
   }, []);
 
-  useEffect(() => {
-    const fetchDailyTips = async () => {
-      const response = await fetch("/api/daily-tips", {
-        method: "POST",
+  const fetchDailyTips = async () => {
+    const response = await fetch("/api/daily-tips", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        isSubscribed,
+        selectedDate: formatDateToString(selectedDate),
+      }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      setDailyTips(data);
+      setFilteredDailyTips(data);
+      console.log("Daily Tips:", data);
+    } else {
+      console.error("Failed to fetch daily tips");
+    }
+  };
+
+  const fetchTotalPremiumTips = async () => {
+    const response = await fetch(
+      `/api/count-premium-tips?selectedDate=${encodeURIComponent(
+        formatDateToString(selectedDate)
+      )}`,
+      {
+        method: "GET",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ isSubscribed: isSubscribed }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setDailyTips(data);
-        setFilteredDailyTips(data);
-        console.log("grouped data", groupByMatchName(data));
-        console.log("Daily Tips:", data);
-      } else {
-        console.error("Failed to fetch daily tips");
       }
-    };
+    );
 
-    const fetchTotalPremiumTips = async () => {
-      const response = await fetch("/api/count-premium-tips", {
+    if (response.ok) {
+      const { premiumCount } = await response.json();
+      setTotalPremiumTips(premiumCount);
+    } else {
+      console.log("Failed to fetch total premium tips");
+    }
+  };
+
+  useEffect(() => {
+    const fetchAvailableDates = async () => {
+      const response = await fetch("/api/available-dates", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -99,14 +131,16 @@ export default function DashboardPage() {
       });
 
       if (response.ok) {
-        const { premiumCount } = await response.json();
-        setTotalPremiumTips(premiumCount);
+        const { dates } = await response.json();
+        console.log("dates>>>", dates); // TODO: Make Calendar interact with available dates
       } else {
-        console.log("Failed to fetch total premium tips");
+        console.log("Failed to fetch available dates");
       }
     };
+
     fetchDailyTips();
     fetchTotalPremiumTips();
+    fetchAvailableDates();
   }, [isSubscribed]);
 
   const handleDarkMode = () => {
@@ -195,6 +229,13 @@ export default function DashboardPage() {
       setFilteredDailyTips(filterByKeyValue("tournament", selectedTournament));
   }, [selectedTournament]);
 
+  useEffect(() => {
+    setLoading(true);
+    fetchDailyTips();
+    fetchTotalPremiumTips();
+    setLoading(false);
+  }, [selectedDate]);
+
   const handleTournamentSelection = (selection) => {
     if (selectedTournament.length && selectedTournament == selection)
       setSelectedTournament("");
@@ -228,6 +269,25 @@ export default function DashboardPage() {
     }, {});
   }
 
+  const getDateFromData = () => {
+    const dataDate = dailyTips.length > 0 && dailyTips[0].date;
+
+    if (dataDate) return dataDate;
+
+    return "Today";
+  };
+
+  const getAssertivityFromData = () => {
+    if (!Array.isArray(dailyTips) || dailyTips.length === 0) return "0%";
+
+    const trueCount = dailyTips.filter((item) => item.result === true).length;
+    const totalCount = dailyTips.length;
+
+    const assertivity = ((trueCount / totalCount) * 100).toFixed(2);
+
+    return assertivity;
+  };
+
   if (loading) return <p>Loading dashboard...</p>;
 
   return (
@@ -249,6 +309,34 @@ export default function DashboardPage() {
         </div>
 
         <div className="flex my-4 items-center w-full">
+          <Dialog open={isCalendarDialogOpen}>
+            <Button
+              onClick={() => {
+                setIsCalendarDialogOpen(true);
+              }}
+              size="icon"
+              variant="secondary"
+              className="mr-4"
+            >
+              <CalendarDays />
+            </Button>
+
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Pick a Date</DialogTitle>
+              </DialogHeader>
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={(d) => {
+                  setSelectedDate(d);
+                  setIsCalendarDialogOpen(false);
+                }}
+                className="rounded-lg border"
+              />
+            </DialogContent>
+          </Dialog>
+
           <Dialog open={isDialogOpen}>
             <Button
               onClick={() => {
@@ -320,7 +408,12 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {`${filteredDailyTips.length} Tips Today`}
+        <div className="flex justify-between">
+          <p>{`${filteredDailyTips.length} Tips for ${getDateFromData()}`}</p>
+          <p className="bg-[#3ec94f] text-black rounded border p-2">
+            {getAssertivityFromData()}% Assertivity
+          </p>
+        </div>
 
         {Object.entries(groupByMatchName(filteredDailyTips)).map(
           ([matchName, tips]) => (
@@ -338,7 +431,7 @@ export default function DashboardPage() {
                   key={`acc-${matchName}-${index}`}
                 >
                   <AccordionItem
-                    value={`item-${index + 1}`}
+                    value={`${matchName}-item-${index + 1}`}
                     className={`transition-all duration-200 ${
                       selectedTip === `item-${index + 1}`
                         ? "border border-1 border-gray-950 dark:border-gray-100 my-2 p-4"
@@ -352,7 +445,10 @@ export default function DashboardPage() {
                             el.average
                           )} ${el.stat}`}
                         </span>
-                        <span>{`Min. Odd: ${el.suggested_minimal_odd}`}</span>
+                        <div>
+                          <span>{el.result ? "✅" : "❌"} </span>
+                          <span>{`Min. Odd: ${el.suggested_minimal_odd}`}</span>
+                        </div>
                       </div>
                     </AccordionTrigger>
                     <AccordionContent className="flex flex-col gap-4 text-balance">

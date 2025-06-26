@@ -1,0 +1,13 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[functions]
+  directory = "netlify/edge-functions"
+
+[[edge_functions]]
+  function = "create-checkout-session"
+  path = "/api/create-checkout-session"
+
+[build.environment]
+  NODE_VERSION = "18" 

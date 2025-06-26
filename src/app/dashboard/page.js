@@ -10,7 +10,14 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Moon, Sun, ListFilter, CalendarDays } from "lucide-react";
+import {
+  Moon,
+  Sun,
+  ListFilter,
+  CalendarDays,
+  ArrowUpRight,
+  ArrowDownRight,
+} from "lucide-react";
 import { useTheme } from "next-themes";
 import { ChartContainer } from "@/components/ui/chart";
 import { Bar, BarChart, ReferenceLine, XAxis } from "recharts";
@@ -30,6 +37,9 @@ import {
   parseDateFromString,
   formatDateToString,
 } from "@/lib/utils";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { useWindowSize } from "usehooks-ts";
 
 export default function DashboardPage() {
   const [user, setUser] = useState(null);
@@ -47,6 +57,7 @@ export default function DashboardPage() {
     parseDateFromString(getTodayDateFormatted())
   );
   const [isCalendarDialogOpen, setIsCalendarDialogOpen] = useState(false);
+  const { width: screenWidth } = useWindowSize();
 
   useEffect(() => {
     const getUserAndSubscription = async () => {
@@ -278,14 +289,38 @@ export default function DashboardPage() {
   };
 
   const getAssertivityFromData = () => {
-    if (!Array.isArray(dailyTips) || dailyTips.length === 0) return "0%";
+    if (!Array.isArray(dailyTips) || dailyTips.length === 0) return "0";
 
     const trueCount = dailyTips.filter((item) => item.result === true).length;
     const totalCount = dailyTips.length;
 
     const assertivity = ((trueCount / totalCount) * 100).toFixed(2);
 
-    return assertivity;
+    if (assertivity > 50) {
+      return (
+        <span className="flex items-center">
+          <span className="flex gap-1">
+            <ArrowUpRight className="text-[#40e340]" />
+            <span className="bg-[#40e340] text-black rounded border p-1">
+              {assertivity}%
+            </span>
+          </span>
+          &nbsp;Assertivity
+        </span>
+      );
+    } else {
+      return (
+        <span className="flex items-center">
+          <span className="flex gap-1">
+            <ArrowDownRight className="text-[#e3404b]" />
+            <span className="bg-[#e3404b] text-black rounded border p-1">
+              {assertivity}%
+            </span>
+          </span>
+          &nbsp;Assertivity
+        </span>
+      );
+    }
   };
 
   if (loading) return <p>Loading dashboard...</p>;
@@ -297,9 +332,16 @@ export default function DashboardPage() {
           <h1 className="text-2xl mb-4">GOATIPS</h1>
 
           <div className="flex full justify-between content-center gap-4">
-            <Button variant="outline" onClick={handleDarkMode}>
-              <Sun className="h-[1.2rem] w-[1.2rem] scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />
-              <Moon className="absolute h-[1.2rem] w-[1.2rem] scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0" />
+            <Button
+              variant="outline"
+              onClick={handleDarkMode}
+              className="relative"
+            >
+              {theme === "dark" ? (
+                <Sun className="h-[1.2rem] w-[1.2rem]" />
+              ) : (
+                <Moon className="h-[1.2rem] w-[1.2rem]" />
+              )}
             </Button>
 
             <Button onClick={handleTopRightButton}>
@@ -308,112 +350,139 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="flex my-4 items-center w-full">
-          <Dialog open={isCalendarDialogOpen}>
-            <Button
-              onClick={() => {
-                setIsCalendarDialogOpen(true);
-              }}
-              size="icon"
-              variant="secondary"
-              className="mr-4"
+        <div className="flex flex-col gap-4 items-center w-full">
+          <div
+            id="dialogs-sorting-filtering"
+            className="w-full flex justify-start"
+          >
+            <Dialog
+              open={isCalendarDialogOpen}
+              onOpenChange={setIsCalendarDialogOpen}
             >
-              <CalendarDays />
-            </Button>
-
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>Pick a Date</DialogTitle>
-              </DialogHeader>
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={(d) => {
-                  setSelectedDate(d);
-                  setIsCalendarDialogOpen(false);
-                }}
-                className="rounded-lg border"
-              />
-            </DialogContent>
-          </Dialog>
-
-          <Dialog open={isDialogOpen}>
-            <Button
-              onClick={() => {
-                setIsDialogOpen(true);
-              }}
-              size="icon"
-              variant="secondary"
-              className="mr-4"
-            >
-              <ListFilter />
-            </Button>
-
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>Filter</DialogTitle>
-              </DialogHeader>
-              <RadioGroup
-                defaultValue="home_teams_first"
-                onValueChange={(r) => setFilterChoosen(r)}
-              >
-                <div className="flex items-center gap-3">
-                  <RadioGroupItem value="home_teams_first" id="r1" />
-                  <Label htmlFor="r1">{`Home teams first`}</Label>
-                </div>
-                <div className="flex items-center gap-3">
-                  <RadioGroupItem value="most_assertive" id="r2" />
-                  <Label htmlFor="r2">{`Most->Least assertive teams`}</Label>
-                </div>
-                <div className="flex items-center gap-3">
-                  <RadioGroupItem value="highest_suggested_odd" id="r3" />
-                  <Label htmlFor="r3">{`Highest->Lowest suggested odd`}</Label>
-                </div>
-              </RadioGroup>
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button
-                    onClick={() => {
-                      setIsDialogOpen(false);
-                    }}
-                    variant="outline"
-                  >
-                    Cancel
-                  </Button>
-                </DialogClose>
-                <Button onClick={handleFilterChange} type="submit">
-                  Save
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-
-          <div className="flex gap-3 w-full !overflow-scroll">
-            {getUniqueValues("tournament").map((item, idx) => (
               <Button
-                key={`tournament-${idx + 1}`}
-                variant="outline"
                 onClick={() => {
-                  handleTournamentSelection(item);
+                  setIsCalendarDialogOpen(true);
                 }}
-                className={
-                  selectedTournament == item
-                    ? "border-primary bg-primary text-white dark:bg-white dark:text-gray-950"
-                    : ""
-                }
+                size="icon"
+                variant="secondary"
+                className="mr-4"
               >
-                {item}
+                <CalendarDays />
               </Button>
-            ))}
+
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Pick a Date</DialogTitle>
+                </DialogHeader>
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(d) => {
+                    setSelectedDate(d);
+                    setIsCalendarDialogOpen(false);
+                  }}
+                  className="rounded-lg border w-full"
+                />
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <Button
+                onClick={() => {
+                  setIsDialogOpen(true);
+                }}
+                size="icon"
+                variant="secondary"
+                className="mr-4"
+              >
+                <ListFilter />
+              </Button>
+
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Filter</DialogTitle>
+                </DialogHeader>
+                <RadioGroup
+                  defaultValue="home_teams_first"
+                  onValueChange={(r) => setFilterChoosen(r)}
+                >
+                  <div className="flex items-center gap-3">
+                    <RadioGroupItem value="home_teams_first" id="r1" />
+                    <Label htmlFor="r1">{`Home teams first`}</Label>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <RadioGroupItem value="most_assertive" id="r2" />
+                    <Label htmlFor="r2">{`Most->Least assertive teams`}</Label>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <RadioGroupItem value="highest_suggested_odd" id="r3" />
+                    <Label htmlFor="r3">{`Highest->Lowest suggested odd`}</Label>
+                  </div>
+                </RadioGroup>
+                <DialogFooter>
+                  <DialogClose asChild>
+                    <Button
+                      onClick={() => {
+                        setIsDialogOpen(false);
+                      }}
+                      variant="outline"
+                    >
+                      Cancel
+                    </Button>
+                  </DialogClose>
+                  <Button onClick={handleFilterChange} type="submit">
+                    Save
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          <div className="flex flex-col w-full justify-center">
+            <ScrollArea style={{ maxWidth: screenWidth }}>
+              <div id="infos" className="flex gap-3 items-center min-w-max">
+                <p className="text-sm">{`${filteredDailyTips.length} tips available`}</p>
+                <p id="separator" className="text-sm">
+                  |
+                </p>
+                <p className="text-sm">{`${getDateFromData()}`}</p>
+                <p id="separator" className="text-sm">
+                  |
+                </p>
+                <p className="text-sm">{getAssertivityFromData()}</p>
+              </div>
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
+
+            <Separator className="mt-3" />
+            <div className="flex flex-col">
+              <p className="text-sm mt-2">Available Leagues</p>
+              <ScrollArea
+                style={{ maxWidth: screenWidth }}
+                className="flex my-2 gap-3"
+              >
+                {getUniqueValues("tournament").map((item, idx) => (
+                  <Button
+                    key={`tournament-${idx + 1}`}
+                    variant="outline"
+                    onClick={() => {
+                      handleTournamentSelection(item);
+                    }}
+                    className={
+                      selectedTournament == item
+                        ? "border-primary bg-primary text-white dark:bg-white dark:text-gray-950"
+                        : ""
+                    }
+                  >
+                    {item}
+                  </Button>
+                ))}
+              </ScrollArea>
+            </div>
           </div>
         </div>
 
-        <div className="flex justify-between">
-          <p>{`${filteredDailyTips.length} Tips for ${getDateFromData()}`}</p>
-          <p className="bg-[#3ec94f] text-black rounded border p-2">
-            {getAssertivityFromData()}% Assertivity
-          </p>
-        </div>
+        <div className="flex justify-between"></div>
 
         {Object.entries(groupByMatchName(filteredDailyTips)).map(
           ([matchName, tips]) => (
@@ -567,19 +636,9 @@ export default function DashboardPage() {
           )
         )}
       </div>
-
-      {/* {!isSubscribed && (
-        <div className="flex justify-center">
-          <button
-            className="mt-4 bg-green-600 text-white px-4 py-2"
-            onClick={() => {
-              window.location.href = "/dashboard/subscribe";
-            }}
-          >
-            Subscribe to Premium
-          </button>
-        </div>
-      )} */}
+      <div id="footer" className="flex justify-end text-white light:text-black">
+        <p className="text-sm p-4">GOATIPS Dashboard | v1.0.0</p>
+      </div>
     </ProtectedRoute>
   );
 }

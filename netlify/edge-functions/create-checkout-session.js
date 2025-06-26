@@ -34,6 +34,7 @@ const EU_COUNTRIES = [
 ];
 
 function getRegionFromCountry(countryCode) {
+  console.log("Country code entering function:", countryCode);
   if (!countryCode) return "US";
   if (countryCode === "US") return "US";
   if (countryCode === "BR") return "BR";
@@ -75,10 +76,10 @@ export default async (request, context) => {
     const { email } = await request.json();
 
     // --- Netlify Edge Function Geolocation ---
-    const country = context.geo?.country;
-    console.log("Netlify detected country:", country);
+    const { code } = context.geo?.country;
+    console.log("Netlify detected country:", code);
 
-    const region = getRegionFromCountry(country);
+    const region = getRegionFromCountry(code);
     console.log("Detected region:", region);
 
     const priceCode = getPriceCodeForRegion(region);

@@ -118,7 +118,7 @@ export default async (request, context) => {
             quantity: 1,
           },
         ],
-        customer_creation: "always",
+        //customer_creation: "always",
         ui_mode: "embedded",
         return_url: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout/return?session_id={CHECKOUT_SESSION_ID}`,
       });

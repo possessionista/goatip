@@ -87,6 +87,8 @@ export default async (request, context) => {
 
     let session;
 
+    console.log("Down here! entering if");
+
     if (email) {
       // Look up or create persistent customer
       const existingCustomers = await stripe.customers.list({
@@ -110,6 +112,7 @@ export default async (request, context) => {
         return_url: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout/return?session_id={CHECKOUT_SESSION_ID}`,
       });
     } else {
+      console.log("No email provided");
       session = await stripe.checkout.sessions.create({
         payment_method_types: ["card"],
         mode: "subscription",
